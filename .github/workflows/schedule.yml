@@ -2,10 +2,7 @@ name: Daily Weather Push
 
 on:
   schedule:
-    # 早安推送：北京时间 07:30 = UTC 23:30 (前一天)
-    - cron: '30 23 * * *'
-    # 晚安推送：北京时间 22:00 = UTC 14:00
-    - cron: '0 14 * * *'
+
 
   # 允许在 GitHub 网页上手动触发
   workflow_dispatch:
