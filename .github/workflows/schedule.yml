@@ -55,6 +55,7 @@ jobs:
 
       - name: Run Weather Script
         env:
+          TZ: Asia/Shanghai
           # WeChat Official Account test account
           APP_ID: ${{ secrets.APP_ID }}
           APP_SECRET: ${{ secrets.APP_SECRET }}

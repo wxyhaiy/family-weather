@@ -1,11 +1,11 @@
 """Fetch weather and send one run to all configured recipients."""
 import argparse
-from datetime import date, datetime
 
 from config import check_config
 from love_message import generate_note
 from push import send_message
 from weather import get_weather
+from time_utils import now_shanghai
 
 
 def push_once(mode: str) -> None:
@@ -23,7 +23,7 @@ def push_once(mode: str) -> None:
         weather = weather_by_city[str(recipient["city_id"])]
         print(f"💌 发送给 {recipient['name']}（{recipient['city_name']}）")
         send_message(recipient, weather, mode, generate_note(recipient, weather, mode))
-    print(f"完成：{date.today().isoformat()} {datetime.now().strftime('%H:%M:%S')}")
+    print(f"完成：{now_shanghai().strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 
 if __name__ == "__main__":

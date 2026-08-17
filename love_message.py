@@ -10,18 +10,57 @@ ROLE_PROMPTS = {
     "child": "对象是小孩。语气童趣、鼓励、安全。重点关注户外玩耍、出汗补水减衣、上下学道路和雨天安全。",
 }
 
-ROLE_LABELS = {"parent": "父母提醒", "child": "孩子提醒", "spouse": "专属提醒", "sibling": "兄弟姐妹提醒"}
+
+def _has_rain(weather: dict) -> bool:
+    rain_hours = weather.get("rain_hours") or []
+    return bool(rain_hours and rain_hours != ["未来12小时暂无明显降雨"])
+
+
+def _number(value: object) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _fallback(role: str, weather: dict) -> str:
+    rain_hours = weather.get("rain_hours") or []
+    rain = "、".join(rain_hours[:3])
+    temp = weather.get("temp", "--")
+    feels = weather.get("feels_like", "--")
+    high = weather.get("temp_max", "--")
+    low = weather.get("temp_min", "--")
+    wind = f"{weather.get('wind_dir', '--')}{weather.get('wind_scale', '--')}级"
+    advice = [f"今天{weather.get('text', '天气未知')}，{low}-{high}℃，当前{temp}℃、体感{feels}℃，{wind}。"]
+
+    if _has_rain(weather):
+        advice.append(f"预计{rain}，出门带伞，尽量避开降雨较强时段，驾车减速并留意积水。")
+    else:
+        advice.append("未来12小时暂无明显降雨，出门前仍可再看一次临近预报。")
+
+    high_value = _number(high)
+    low_value = _number(low)
+    feels_value = _number(feels)
+    uv_value = _number(weather.get("uv_index"))
+    wind_value = _number(weather.get("wind_scale"))
+    if (high_value is not None and high_value >= 30) or (feels_value is not None and feels_value >= 30):
+        advice.append("午后体感偏热，穿透气衣物、及时补水，减少长时间户外停留。")
+    elif high_value is not None and low_value is not None and high_value - low_value >= 8:
+        advice.append("昼夜温差较大，建议分层穿衣，早出晚归备一件薄外套。")
+    if uv_value is not None and uv_value >= 5:
+        advice.append("紫外线较强，外出涂防晒并使用遮阳用品。")
+    if wind_value is not None and wind_value >= 5:
+        advice.append("风力较大，远离临时搭建物和易坠物区域，骑行注意侧风。")
+
     if role == "parent":
-        return f"体感 {weather.get('feels_like', '--')}℃，早晚注意增减衣物；空气质量{weather.get('air_category', '未知')}，外出注意防护。"
-    if role == "sibling":
-        rain = "、".join(weather.get("rain_hours", [])[:2])
-        return f"出行提醒：今天{weather['text']}，{rain or '暂时没有明显降雨'}；通勤或外出建议带伞，路上注意安全。"
-    if role == "spouse":
-        return f"今天最高 {weather.get('temp_max', '--')}℃，出门记得做好防晒，带上伞，愿你漂亮又舒心。"
-    return f"孩子提醒：今天{weather['text']}，出门带好水和雨具；上下学路上走人行道，遇到湿滑路面慢慢走，玩耍时注意安全。"
+        advice.append("早晚出行放慢脚步，随身带水；空气质量不佳时减少开窗和户外活动。")
+    elif role == "child":
+        advice.append("上下学走人行道，湿滑路面慢走；户外玩耍及时补水，出汗后不要立刻吹冷风。")
+    elif role == "spouse":
+        advice.append("通勤时注意防晒和补水，空调环境可备薄外套，照顾好自己。")
+    else:
+        advice.append("通勤预留机动时间，户外运动避开高温和降雨时段，今天不建议洗车。")
+    return "".join(advice)
 
 
 def _usable_note(note: str) -> bool:
@@ -35,13 +74,18 @@ def _usable_note(note: str) -> bool:
     return True
 
 
+def _clean_note(note: str) -> str:
+    note = re.sub(r"^[一二三四五六七八九十\s、.。:：-]*(?:父母|孩子|兄弟姐妹|兄弟|专属|角色)?(?:提醒|注意事项|出行提醒)\s*[:：-]?\s*", "", note)
+    return note.strip().strip("#*")
+
+
 def generate_note(recipient: dict, weather: dict, mode: str) -> str:
     if not GEMINI_API_KEY:
-        return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{_fallback(recipient['role'], weather)}"
+        return _fallback(recipient["role"], weather)
     facts = {"姓名": recipient["name"], "角色": recipient["role"], "地点": recipient["city_name"], "天气": weather["text"], "实时温度": weather["temp"], "最低温": weather["temp_min"], "最高温": weather["temp_max"], "体感": weather["feels_like"], "湿度": weather["humidity"], "风向风力": f"{weather['wind_dir']}{weather['wind_scale']}级", "AQI": weather["aqi"], "空气质量": weather["air_category"], "紫外线指数": weather["uv_index"], "穿衣指数": weather.get("dressing_index", "--"), "运动指数": weather.get("sport_index", "--"), "舒适度指数": weather.get("comfort_index", "--"), "未来降雨": "；".join(weather["rain_hours"]), "时段": mode}
     prompt = f"""你是家庭天气 AI 秘书。{ROLE_PROMPTS[recipient['role']]}
 天气事实（只能使用这些事实，不要编造）：{facts}
-请生成一段 80-180 字的中文专属天气通报，直接写给{recipient['name']}。必须具体、自然、有行动建议。缺失或为 -- 的数据不要提及。不要使用 Markdown、标题、JSON 或解释。"""
+请生成一段 80-180 字的中文注意事项，直接写给{recipient['name']}。必须根据未来降雨的具体时间、气温范围、体感、风力和角色场景给出 2-4 条明确建议；有降雨就指出需要避开的时段和是否带伞，有高温或紫外线就说明补水、防晒或减少户外活动，有大风就提醒交通和户外安全。缺失或为 -- 的数据不要提及。只输出正文，不要出现“孩子提醒”“兄弟提醒”“角色提醒”“注意事项”等标题或前缀，不要 Markdown、JSON 或解释。"""
     try:
         from google import genai
         with genai.Client(api_key=GEMINI_API_KEY) as client:
@@ -50,11 +94,11 @@ def generate_note(recipient: dict, weather: dict, mode: str) -> str:
                 contents=prompt,
                 config={"temperature": 0.75, "max_output_tokens": 300},
             )
-        note = (response.text or "").strip()
+        note = _clean_note((response.text or "").strip())
         if not _usable_note(note):
-            print("⚠️ Gemini 返回内容不可用，使用本地角色提醒")
+            print("⚠️ Gemini 返回内容不可用，使用本地出行建议")
             note = _fallback(recipient["role"], weather)
-        return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{note}"
+        return note
     except Exception as exc:
-        print(f"⚠️ Gemini 失败，使用本地角色提醒: {exc}")
-        return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{_fallback(recipient['role'], weather)}"
+        print(f"⚠️ Gemini 失败，使用本地出行建议: {exc}")
+        return _fallback(recipient["role"], weather)

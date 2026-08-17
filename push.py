@@ -1,11 +1,11 @@
 """Send role-specific template messages through WeChat directly."""
 import json
-from datetime import datetime
 from urllib.parse import quote
 
 import requests
 
 from config import APP_ID, APP_SECRET, TEMPLATE_ID, USER_IDS_RAW
+from time_utils import now_shanghai
 
 TOKEN_URL = "https://api.weixin.qq.com/cgi-bin/token"
 SEND_URL = "https://api.weixin.qq.com/cgi-bin/message/template/send"
@@ -43,27 +43,27 @@ def _child_note(weather: dict) -> str:
 def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict:
     greeting = "早安" if mode == "morning" else "晚安"
     role = recipient["role"]
-    travel = _travel_note(weather) + "外出前查看天气，建议带伞，通勤路上注意安全。"
+    travel = note or _travel_note(weather) + "外出前查看天气，按天气变化做好防护，路上注意安全。"
     child = _child_note(weather)
     return {
         "first": {"value": f"{greeting}，{recipient['name']}，今日天气提醒"},
-        "date": {"value": datetime.now().strftime("%Y年%m月%d日")},
+        "date": {"value": now_shanghai().strftime("%Y年%m月%d日")},
         "name": {"value": recipient["name"]},
         "city": {"value": recipient["city_name"]},
         "weather": {"value": f"{weather['emoji']} {weather['text']}"},
         "min_temperature": {"value": str(weather.get("temp_min", "--"))},
         "max_temperature": {"value": str(weather.get("temp_max", "--"))},
         "wind_direction": {"value": f"{weather.get('wind_dir', '--')}{weather.get('wind_scale', '--')}级"},
-        "note": {"value": note or _default_note(recipient["role"])},
-        # These keys match the separate travel/child fields in the WeChat template.
-        "travel": {"value": travel if role == "sibling" else ""},
+        "note": {"value": travel},
+        # Keep both template fields populated so existing and newer templates show the same advice.
+        "travel": {"value": travel},
         "child": {"value": child if role == "child" else ""},
         "remark": {"value": note or "愿家人今天平安顺利。"},
     }
 
 
 def _detail_url(recipient: dict, weather: dict, mode: str, note: str) -> str:
-    detail = {"recipient": recipient, "weather": weather, "mode": mode, "note": note}
+    detail = {"recipient": recipient, "weather": weather, "mode": mode, "travel": note, "note": note}
     encoded = quote(json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
     return f"{DETAIL_PAGE_BASE_URL}?data={encoded}"
 
