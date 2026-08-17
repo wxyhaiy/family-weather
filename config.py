@@ -13,6 +13,7 @@ USER_IDS_RAW = os.getenv("USER_IDS", "")
 RECIPIENTS_RAW = os.getenv("RECIPIENTS_JSON", "")
 QWEATHER_API_KEY = os.getenv("QWEATHER_API_KEY", "")
 QWEATHER_API_HOST = os.getenv("QWEATHER_API_HOST", "https://devapi.qweather.com")
+QWEATHER_JWT = os.getenv("QWEATHER_JWT", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 

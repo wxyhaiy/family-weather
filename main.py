@@ -18,7 +18,7 @@ def push_once(mode: str) -> None:
         city_id = str(recipient["city_id"])
         if city_id not in weather_by_city:
             print(f"📍 获取 {recipient['city_name']} 天气...")
-            weather_by_city[city_id] = get_weather(city_id)
+            weather_by_city[city_id] = get_weather(city_id, recipient)
     for recipient in recipients:
         weather = weather_by_city[str(recipient["city_id"])]
         print(f"💌 发送给 {recipient['name']}（{recipient['city_name']}）")

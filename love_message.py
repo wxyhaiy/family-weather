@@ -8,6 +8,8 @@ ROLE_PROMPTS = {
     "child": "对象是小孩。语气童趣、鼓励、安全。重点关注户外玩耍、出汗补水减衣、上下学道路和雨天安全。",
 }
 
+ROLE_LABELS = {"parent": "父母提醒", "child": "孩子提醒", "spouse": "专属提醒", "sibling": "兄弟姐妹提醒"}
+
 
 def _fallback(role: str, weather: dict) -> str:
     if role == "parent":
@@ -21,7 +23,7 @@ def _fallback(role: str, weather: dict) -> str:
 
 def generate_note(recipient: dict, weather: dict, mode: str) -> str:
     if not GEMINI_API_KEY:
-        return _fallback(recipient["role"], weather)
+        return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{_fallback(recipient['role'], weather)}"
     facts = {"姓名": recipient["name"], "角色": recipient["role"], "地点": recipient["city_name"], "天气": weather["text"], "实时温度": weather["temp"], "最低温": weather["temp_min"], "最高温": weather["temp_max"], "体感": weather["feels_like"], "湿度": weather["humidity"], "风向风力": f"{weather['wind_dir']}{weather['wind_scale']}级", "AQI": weather["aqi"], "空气质量": weather["air_category"], "紫外线指数": weather["uv_index"], "穿衣指数": weather.get("dressing_index", "--"), "运动指数": weather.get("sport_index", "--"), "舒适度指数": weather.get("comfort_index", "--"), "未来降雨": "；".join(weather["rain_hours"]), "时段": mode}
     prompt = f"""你是家庭天气 AI 秘书。{ROLE_PROMPTS[recipient['role']]}
 天气事实（只能使用这些事实，不要编造）：{facts}
@@ -34,7 +36,8 @@ def generate_note(recipient: dict, weather: dict, mode: str) -> str:
                 contents=prompt,
                 config={"temperature": 0.75, "max_output_tokens": 300},
             )
-        return response.text.strip()
+        note = (response.text or "").strip() or _fallback(recipient["role"], weather)
+        return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{note}"
     except Exception as exc:
         print(f"⚠️ Gemini 失败，使用本地角色提醒: {exc}")
-        return _fallback(recipient["role"], weather)
+        return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{_fallback(recipient['role'], weather)}"

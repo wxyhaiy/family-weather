@@ -1,6 +1,7 @@
 """Send role-specific template messages through WeChat directly."""
 import json
 from datetime import datetime
+from urllib.parse import quote
 
 import requests
 
@@ -8,6 +9,7 @@ from config import APP_ID, APP_SECRET, TEMPLATE_ID, USER_IDS_RAW
 
 TOKEN_URL = "https://api.weixin.qq.com/cgi-bin/token"
 SEND_URL = "https://api.weixin.qq.com/cgi-bin/message/template/send"
+DETAIL_PAGE_BASE_URL = "https://wxyhaiy.github.io/family-weather/"
 
 
 def _access_token() -> str:
@@ -35,8 +37,14 @@ def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict
         "max_temperature": {"value": str(weather.get("temp_max", "--"))},
         "wind_direction": {"value": f"{weather.get('wind_dir', '--')}{weather.get('wind_scale', '--')}级"},
         "note": {"value": note or _default_note(recipient["role"])},
-        "remark": {"value": "愿家人今天平安顺利。"},
+        "remark": {"value": note or "愿家人今天平安顺利。"},
     }
+
+
+def _detail_url(recipient: dict, weather: dict, mode: str, note: str) -> str:
+    detail = {"recipient": recipient, "weather": weather, "mode": mode, "note": note}
+    encoded = quote(json.dumps(detail, ensure_ascii=False, separators=(",", ":")))
+    return f"{DETAIL_PAGE_BASE_URL}?data={encoded}"
 
 
 def send_message(recipient: dict, weather: dict, mode: str, note: str = "") -> None:
@@ -45,7 +53,7 @@ def send_message(recipient: dict, weather: dict, mode: str, note: str = "") -> N
     if not open_id:
         print(f"跳过 {recipient['name']}：OpenID 为空")
         return
-    payload = {"touser": open_id, "template_id": TEMPLATE_ID, "data": _template_data(recipient, weather, mode, note)}
+    payload = {"touser": open_id, "template_id": TEMPLATE_ID, "url": _detail_url(recipient, weather, mode, note), "data": _template_data(recipient, weather, mode, note)}
     response = requests.post(SEND_URL, params={"access_token": _access_token()}, json=payload, timeout=15)
     response.raise_for_status()
     result = response.json()
