@@ -41,7 +41,11 @@ def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict
 
 def send_message(recipient: dict, weather: dict, mode: str, note: str = "") -> None:
     user_ids = json.loads(USER_IDS_RAW)
-    payload = {"touser": user_ids[recipient["key"]], "template_id": TEMPLATE_ID, "data": _template_data(recipient, weather, mode, note)}
+    open_id = str(user_ids.get(recipient["key"], "")).strip()
+    if not open_id:
+        print(f"跳过 {recipient['name']}：OpenID 为空")
+        return
+    payload = {"touser": open_id, "template_id": TEMPLATE_ID, "data": _template_data(recipient, weather, mode, note)}
     response = requests.post(SEND_URL, params={"access_token": _access_token()}, json=payload, timeout=15)
     response.raise_for_status()
     result = response.json()

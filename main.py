@@ -10,6 +10,9 @@ from weather import get_weather
 
 def push_once(mode: str) -> None:
     recipients = check_config()
+    if not recipients:
+        print("没有可发送的收件人，本次任务结束。")
+        return
     weather_by_city = {}
     for recipient in recipients:
         city_id = str(recipient["city_id"])

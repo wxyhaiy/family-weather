@@ -29,29 +29,43 @@ def _json_object(raw: str, name: str) -> dict:
 
 def check_config() -> list[dict]:
     errors = []
-    for name, value in (("APP_ID", APP_ID), ("APP_SECRET", APP_SECRET), ("USER_IDS", USER_IDS_RAW), ("RECIPIENTS_JSON", RECIPIENTS_RAW), ("QWEATHER_API_KEY", QWEATHER_API_KEY)):
+    for name, value in (("APP_ID", APP_ID), ("APP_SECRET", APP_SECRET), ("RECIPIENTS_JSON", RECIPIENTS_RAW), ("QWEATHER_API_KEY", QWEATHER_API_KEY)):
         if not value:
             errors.append(name)
     if not TEMPLATE_ID:
         errors.append("TEMPLATE_ID")
     try:
-        recipients = _json_object(RECIPIENTS_RAW, "RECIPIENTS_JSON").get("recipients", [])
-        user_ids = _json_object(USER_IDS_RAW, "USER_IDS")
+        recipients_value = json.loads(RECIPIENTS_RAW)
+        if isinstance(recipients_value, dict):
+            recipients = recipients_value.get("recipients", [])
+        elif isinstance(recipients_value, list):
+            recipients = recipients_value
+        else:
+            recipients = []
+            raise ValueError("RECIPIENTS_JSON 必须是对象或数组")
+        user_ids = _json_object(USER_IDS_RAW, "USER_IDS") if USER_IDS_RAW.strip() else {}
     except ValueError as exc:
         errors.append(str(exc))
         recipients, user_ids = [], {}
     if not isinstance(recipients, list) or not recipients:
         errors.append("RECIPIENTS_JSON.recipients 必须是非空数组")
         recipients = []
+    active_recipients = []
+    skipped_recipients = []
     for item in recipients:
         for field in ("key", "name", "city_id", "city_name", "role"):
             if not item.get(field):
                 errors.append(f"RECIPIENTS_JSON 缺少 {field}")
         if item.get("role") not in {"parent", "child", "spouse", "sibling"}:
             errors.append(f"无效角色: {item.get('role')}")
-        if item.get("key") not in user_ids:
-            errors.append(f"USER_IDS 缺少: {item.get('key')}")
+        open_id = str(user_ids.get(item.get("key", ""), "")).strip()
+        if open_id:
+            active_recipients.append(item)
+        else:
+            skipped_recipients.append(item.get("name") or item.get("key") or "未命名收件人")
     if errors:
         raise ValueError("配置不完整：" + "; ".join(dict.fromkeys(errors)))
-    print(f"✅ 配置加载成功，收件人 {len(recipients)} 人")
-    return recipients
+    if skipped_recipients:
+        print(f"跳过 OpenID 为空的收件人：{'、'.join(skipped_recipients)}")
+    print(f"配置加载成功，实际发送 {len(active_recipients)} 人")
+    return active_recipients
