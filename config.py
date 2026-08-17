@@ -1,69 +1,63 @@
-"""
-config.py - 读取 .env 配置
-"""
+"""Load all personal settings from environment variables."""
+import json
 import os
-from pathlib import Path
+
 from dotenv import load_dotenv
 
-env_path = Path(__file__).parent / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
-# 如果 .env 不存在，直接从系统环境变量读取（兼容 GitHub Actions）
+load_dotenv()
 
-# ---- PushPlus ----
-PUSHPLUS_TOKEN: str = os.getenv("PUSHPLUS_TOKEN", "")
-PUSHPLUS_TOPIC: str = os.getenv("PUSHPLUS_TOPIC", "")
-
-# ---- Gemini ----
-GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
-
-# ---- 和风天气 ----
-QWEATHER_API_KEY: str = os.getenv("QWEATHER_API_KEY", "")
-QWEATHER_API_HOST: str = os.getenv("QWEATHER_API_HOST", "https://devapi.qweather.com")
-
-# ---- 推送时间 ----
-MORNING_TIME: str = os.getenv("MORNING_TIME", "07:20")
-EVENING_TIME: str = os.getenv("EVENING_TIME", "22:00")
+APP_ID = os.getenv("APP_ID", "")
+APP_SECRET = os.getenv("APP_SECRET", "")
+TEMPLATE_IDS = {
+    "parent": os.getenv("TEMPLATE_ID_PARENT", ""),
+    "child": os.getenv("TEMPLATE_ID_CHILD", ""),
+    "spouse": os.getenv("TEMPLATE_ID_SPOUSE", ""),
+    "sibling": os.getenv("TEMPLATE_ID_SIBLING", ""),
+}
+USER_IDS_RAW = os.getenv("USER_IDS", "")
+RECIPIENTS_RAW = os.getenv("RECIPIENTS_JSON", "")
+QWEATHER_API_KEY = os.getenv("QWEATHER_API_KEY", "")
+QWEATHER_API_HOST = os.getenv("QWEATHER_API_HOST", "https://devapi.qweather.com")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 
-# ---- 多城市配置 ----
-class CityConfig:
-    def __init__(self, person: str, city_id: str, city_name: str):
-        self.person = person
-        self.city_id = city_id
-        self.city_name = city_name
-
-    def __repr__(self):
-        return f"{self.person}({self.city_name})"
-
-
-def load_cities() -> list:
-    cities = []
-    for i in range(1, 20):
-        person = os.getenv(f"CITY_{i}_PERSON")
-        if person is None:
-            break
-        city_id = os.getenv(f"CITY_{i}_ID", "101010100")
-        city_name = os.getenv(f"CITY_{i}_NAME", "未知")
-        cities.append(CityConfig(person=person, city_id=city_id, city_name=city_name))
-    return cities
+def _json_object(raw: str, name: str) -> dict:
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{name} 必须是合法 JSON 对象") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{name} 必须是 JSON 对象")
+    return value
 
 
-CITIES = load_cities()
-
-
-def check_config():
+def check_config() -> list[dict]:
     errors = []
-    if not PUSHPLUS_TOKEN or "你的" in PUSHPLUS_TOKEN:
-        errors.append("PUSHPLUS_TOKEN")
-    if not CITIES:
-        errors.append("至少需要配置一个城市 (CITY_1_PERSON)")
+    for name, value in (("APP_ID", APP_ID), ("APP_SECRET", APP_SECRET), ("USER_IDS", USER_IDS_RAW), ("RECIPIENTS_JSON", RECIPIENTS_RAW), ("QWEATHER_API_KEY", QWEATHER_API_KEY)):
+        if not value:
+            errors.append(name)
+    for role, template_id in TEMPLATE_IDS.items():
+        if not template_id:
+            errors.append(f"TEMPLATE_ID_{role.upper()}")
+    try:
+        recipients = _json_object(RECIPIENTS_RAW, "RECIPIENTS_JSON").get("recipients", [])
+        user_ids = _json_object(USER_IDS_RAW, "USER_IDS")
+    except ValueError as exc:
+        errors.append(str(exc))
+        recipients, user_ids = [], {}
+    if not isinstance(recipients, list) or not recipients:
+        errors.append("RECIPIENTS_JSON.recipients 必须是非空数组")
+        recipients = []
+    for item in recipients:
+        for field in ("key", "name", "city_id", "city_name", "role"):
+            if not item.get(field):
+                errors.append(f"RECIPIENTS_JSON 缺少 {field}")
+        if item.get("role") not in TEMPLATE_IDS:
+            errors.append(f"无效角色: {item.get('role')}")
+        if item.get("key") not in user_ids:
+            errors.append(f"USER_IDS 缺少: {item.get('key')}")
     if errors:
-        raise ValueError(f"❌ 配置不完整：{', '.join(errors)}")
-    print(f"✅ 配置加载成功")
-    print(f"   PushPlus: {'群组(' + PUSHPLUS_TOPIC + ')' if PUSHPLUS_TOPIC else '仅个人'}")
-    print(f"   Gemini: {'✅ ' + GEMINI_MODEL if GEMINI_API_KEY else '❌ 未配置（使用经典情话）'}")
-    print(f"   天气: 和风天气 → {QWEATHER_API_HOST}")
-    for c in CITIES:
-        print(f"   📍 {c.person} — {c.city_name} (ID:{c.city_id})")
+        raise ValueError("配置不完整：" + "; ".join(dict.fromkeys(errors)))
+    print(f"✅ 配置加载成功，收件人 {len(recipients)} 人")
+    return recipients

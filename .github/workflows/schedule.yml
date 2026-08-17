@@ -2,7 +2,7 @@ name: Daily Weather Push
 
 on:
   schedule:
-    # GitHub Actions uses UTC. 22:30 UTC = 06:30 Beijing; 14:00 UTC = 22:00 Beijing.
+    # GitHub Actions uses UTC. 22:30 UTC = 06:30 China time; 14:00 UTC = 22:00 China time.
     - cron: '30 22 * * *'
     - cron: '0 14 * * *'
 
@@ -55,21 +55,20 @@ jobs:
 
       - name: Run Weather Script
         env:
-          # PushPlus
-          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          PUSHPLUS_TOPIC: ${{ secrets.PUSHPLUS_TOPIC }}
+          # WeChat Official Account test account
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          TEMPLATE_ID_PARENT: ${{ secrets.TEMPLATE_ID_PARENT }}
+          TEMPLATE_ID_CHILD: ${{ secrets.TEMPLATE_ID_CHILD }}
+          TEMPLATE_ID_SPOUSE: ${{ secrets.TEMPLATE_ID_SPOUSE }}
+          TEMPLATE_ID_SIBLING: ${{ secrets.TEMPLATE_ID_SIBLING }}
+          USER_IDS: ${{ secrets.USER_IDS }}
+          RECIPIENTS_JSON: ${{ secrets.RECIPIENTS_JSON }}
           # Gemini
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           # 和风天气
           QWEATHER_API_KEY: ${{ secrets.QWEATHER_API_KEY }}
           QWEATHER_API_HOST: ${{ secrets.QWEATHER_API_HOST }}
-          # 城市配置（非敏感信息，直接写在这里）
-          CITY_1_PERSON: 胜泽
-          CITY_1_ID: '101010100'
-          CITY_1_NAME: 北京
-          CITY_2_PERSON: 一心
-          CITY_2_ID: '101240101'
-          CITY_2_NAME: 南昌
         run: |
           python main.py --mode ${{ steps.mode.outputs.push_mode }}
