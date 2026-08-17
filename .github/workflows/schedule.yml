@@ -58,10 +58,7 @@ jobs:
           # WeChat Official Account test account
           APP_ID: ${{ secrets.APP_ID }}
           APP_SECRET: ${{ secrets.APP_SECRET }}
-          TEMPLATE_ID_PARENT: ${{ secrets.TEMPLATE_ID_PARENT }}
-          TEMPLATE_ID_CHILD: ${{ secrets.TEMPLATE_ID_CHILD }}
-          TEMPLATE_ID_SPOUSE: ${{ secrets.TEMPLATE_ID_SPOUSE }}
-          TEMPLATE_ID_SIBLING: ${{ secrets.TEMPLATE_ID_SIBLING }}
+          TEMPLATE_ID: ${{ secrets.TEMPLATE_ID }}
           USER_IDS: ${{ secrets.USER_IDS }}
           RECIPIENTS_JSON: ${{ secrets.RECIPIENTS_JSON }}
           # Gemini

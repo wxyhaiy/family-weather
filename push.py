@@ -4,7 +4,7 @@ from datetime import datetime
 
 import requests
 
-from config import APP_ID, APP_SECRET, TEMPLATE_IDS, USER_IDS_RAW
+from config import APP_ID, APP_SECRET, TEMPLATE_ID, USER_IDS_RAW
 
 TOKEN_URL = "https://api.weixin.qq.com/cgi-bin/token"
 SEND_URL = "https://api.weixin.qq.com/cgi-bin/message/template/send"
@@ -41,7 +41,7 @@ def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict
 
 def send_message(recipient: dict, weather: dict, mode: str, note: str = "") -> None:
     user_ids = json.loads(USER_IDS_RAW)
-    payload = {"touser": user_ids[recipient["key"]], "template_id": TEMPLATE_IDS[recipient["role"]], "data": _template_data(recipient, weather, mode, note)}
+    payload = {"touser": user_ids[recipient["key"]], "template_id": TEMPLATE_ID, "data": _template_data(recipient, weather, mode, note)}
     response = requests.post(SEND_URL, params={"access_token": _access_token()}, json=payload, timeout=15)
     response.raise_for_status()
     result = response.json()

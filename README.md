@@ -6,7 +6,7 @@
 
 - 北京时间每天 06:30 早安推送、22:00 晚安推送
 - 微信直连：AppID、AppSecret、模板消息接口
-- 角色模板：父母、孩子、老婆、兄弟姐妹
+- 统一微信模板 + 父母、孩子、老婆、兄弟姐妹四种 AI 角色风格
 - 每位家人独立配置 OpenID、姓名、城市和角色
 - 同一城市只请求一次天气
 - Gemini 可选；未配置时使用内置提醒
@@ -16,7 +16,7 @@
 所有个人信息和密钥都通过环境变量提供，不写入代码：
 
 - `APP_ID`、`APP_SECRET`：微信测试号凭据
-- `TEMPLATE_ID_PARENT`、`TEMPLATE_ID_CHILD`、`TEMPLATE_ID_SPOUSE`、`TEMPLATE_ID_SIBLING`：四套模板 ID
+- `TEMPLATE_ID`：全家共用的一套微信模板 ID
 - `USER_IDS`：用户 key 到 OpenID 的 JSON 对象
 - `RECIPIENTS_JSON`：姓名、城市、角色的 JSON 对象
 - `QWEATHER_API_KEY`、`QWEATHER_API_HOST`：天气服务配置
