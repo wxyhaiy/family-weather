@@ -31,6 +31,12 @@ class WeatherReminderTests(unittest.TestCase):
             self.assertEqual(data["travel"]["value"], "详细天气出行建议")
             self.assertEqual(data["note"]["value"], "详细天气出行建议")
 
+    def test_greeting_matches_each_push_period(self):
+        expected = {"morning": "早安", "noon": "午安", "afternoon": "下午好", "evening": "晚安"}
+        for mode, greeting in expected.items():
+            data = push._template_data(RECIPIENT, WEATHER, mode, "建议")
+            self.assertTrue(data["first"]["value"].startswith(greeting))
+
     def test_empty_ai_note_gets_a_non_empty_template_value(self):
         data = push._template_data(RECIPIENT, WEATHER, "morning", "   ")
         self.assertTrue(data["note"]["value"].strip())

@@ -28,5 +28,5 @@ def push_once(mode: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="家庭天气微信模板推送")
-    parser.add_argument("--mode", choices=["morning", "evening"], default="morning")
+    parser.add_argument("--mode", choices=["morning", "noon", "afternoon", "evening"], default="morning")
     push_once(parser.parse_args().mode)

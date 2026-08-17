@@ -152,6 +152,8 @@ AI 生成的详细建议会同时写入 `note` 和 `travel`，确保新旧微信
 | 北京时间 | UTC cron | 模式 |
 |---|---|---|
 | 06:30 | `30 22 * * *` | morning |
+| 11:30 | `30 3 * * *` | noon |
+| 14:00 | `0 6 * * *` | afternoon |
 | 22:00 | `0 14 * * *` | evening |
 
 GitHub Actions 可能延迟几分钟。手动测试：`Actions -> Daily Weather Push -> Run workflow`。
@@ -161,6 +163,8 @@ GitHub Actions 可能延迟几分钟。手动测试：`Actions -> Daily Weather 
 ```powershell
 pip install -r requirements.txt
 python main.py --mode morning
+python main.py --mode noon
+python main.py --mode afternoon
 python main.py --mode evening
 ```
 

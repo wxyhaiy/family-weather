@@ -40,6 +40,15 @@ def _child_note(weather: dict) -> str:
     return f"{rain}上下学走人行道，遇到湿滑路面慢慢走，记得喝水，玩耍时注意安全。"
 
 
+def _greeting(mode: str) -> str:
+    return {
+        "morning": "早安",
+        "noon": "午安",
+        "afternoon": "下午好",
+        "evening": "晚安",
+    }.get(mode, "你好")
+
+
 def _guaranteed_travel_note(weather: dict) -> str:
     """Build a non-empty message for the template's note field."""
     rain_hours = weather.get("rain_hours") or []
@@ -53,7 +62,7 @@ def _guaranteed_travel_note(weather: dict) -> str:
 
 
 def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict:
-    greeting = "早安" if mode == "morning" else "晚安"
+    greeting = _greeting(mode)
     role = recipient["role"]
     travel = note.strip() if isinstance(note, str) else ""
     if not travel:
