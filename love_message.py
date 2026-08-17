@@ -22,7 +22,7 @@ def _fallback(role: str, weather: dict) -> str:
 def generate_note(recipient: dict, weather: dict, mode: str) -> str:
     if not GEMINI_API_KEY:
         return _fallback(recipient["role"], weather)
-    facts = {"姓名": recipient["name"], "角色": recipient["role"], "地点": recipient["city_name"], "天气": weather["text"], "实时温度": weather["temp"], "最低温": weather["temp_min"], "最高温": weather["temp_max"], "体感": weather["feels_like"], "湿度": weather["humidity"], "风向风力": f"{weather['wind_dir']}{weather['wind_scale']}级", "AQI": weather["aqi"], "空气质量": weather["air_category"], "紫外线指数": weather["uv_index"], "未来降雨": "；".join(weather["rain_hours"]), "时段": mode}
+    facts = {"姓名": recipient["name"], "角色": recipient["role"], "地点": recipient["city_name"], "天气": weather["text"], "实时温度": weather["temp"], "最低温": weather["temp_min"], "最高温": weather["temp_max"], "体感": weather["feels_like"], "湿度": weather["humidity"], "风向风力": f"{weather['wind_dir']}{weather['wind_scale']}级", "AQI": weather["aqi"], "空气质量": weather["air_category"], "紫外线指数": weather["uv_index"], "穿衣指数": weather.get("dressing_index", "--"), "运动指数": weather.get("sport_index", "--"), "舒适度指数": weather.get("comfort_index", "--"), "未来降雨": "；".join(weather["rain_hours"]), "时段": mode}
     prompt = f"""你是家庭天气 AI 秘书。{ROLE_PROMPTS[recipient['role']]}
 天气事实（只能使用这些事实，不要编造）：{facts}
 请生成一段 80-180 字的中文专属天气通报，直接写给{recipient['name']}。必须具体、自然、有行动建议。缺失或为 -- 的数据不要提及。不要使用 Markdown、标题、JSON 或解释。"""

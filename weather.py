@@ -6,8 +6,11 @@ from config import QWEATHER_API_HOST, QWEATHER_API_KEY
 EMOJI = {"晴": "☀️", "多云": "⛅", "阴": "☁️", "小雨": "🌧️", "中雨": "🌧️", "大雨": "🌧️", "暴雨": "🌊", "阵雨": "🌦️", "雷阵雨": "⛈️", "小雪": "❄️", "雾": "🌫️", "霾": "😷"}
 
 
-def _get(path: str, city_id: str) -> dict:
-    response = requests.get(f"{QWEATHER_API_HOST.rstrip('/')}/v7/{path}", params={"location": city_id, "key": QWEATHER_API_KEY}, timeout=15)
+def _get(path: str, city_id: str, extra_params: dict | None = None) -> dict:
+    params = {"location": city_id, "key": QWEATHER_API_KEY}
+    if extra_params:
+        params.update(extra_params)
+    response = requests.get(f"{QWEATHER_API_HOST.rstrip('/')}/v7/{path}", params=params, timeout=15)
     response.raise_for_status()
     result = response.json()
     if result.get("code") != "200":
@@ -19,12 +22,18 @@ def get_weather(city_id: str) -> dict:
     now = _get("weather/now", city_id)["now"]
     daily = _get("weather/3d", city_id).get("daily", [{}])[0]
     hourly = _get("weather/24h", city_id).get("hourly", [])
+    indices = {}
+    try:
+        index_items = _get("indices/1d", city_id, {"type": "1,3,5,9"}).get("daily", [])
+        indices = {str(item.get("type")): item for item in index_items}
+    except Exception as exc:
+        print(f"   生活指数获取失败，AI 将忽略生活指数: {exc}")
     aqi = {}
     try:
         aqi = _get("air/now", city_id).get("now", {})
     except Exception as exc:
         print(f"   ⚠️ AQI 获取失败，AI 将忽略 AQI: {exc}")
-    uv = daily.get("uvIndex", "--")
+    uv = indices.get("5", {}).get("level", "--")
     rain_hours = [f"{item.get('fxTime', '')[11:16]} {item.get('text', '')} {item.get('pop', '')}%" for item in hourly[:12] if int(item.get("pop", 0) or 0) >= 30]
     text = now.get("text", "未知")
     return {
@@ -33,5 +42,8 @@ def get_weather(city_id: str) -> dict:
         "feels_like": now.get("feelsLike", "--"), "humidity": now.get("humidity", "--"),
         "wind_dir": now.get("windDir", "--"), "wind_scale": now.get("windScale", "--"),
         "uv_index": uv, "aqi": aqi.get("aqi", "--"), "air_category": aqi.get("category", "未知"),
+        "dressing_index": indices.get("1", {}).get("text", "--"),
+        "sport_index": indices.get("3", {}).get("text", "--"),
+        "comfort_index": indices.get("9", {}).get("text", "--"),
         "rain_hours": rain_hours or ["未来12小时暂无明显降雨"], "sunrise": daily.get("sunrise", "--"), "sunset": daily.get("sunset", "--"),
     }

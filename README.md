@@ -53,33 +53,67 @@ AI 专属提醒：{{note.DATA}}
 
 位置：`Settings -> Secrets and variables -> Actions -> New repository secret`。
 
-| Secret | 必需 | 内容 |
-|---|---|---|
-| APP_ID | 是 | 微信测试号 AppID |
-| APP_SECRET | 是 | 微信测试号 AppSecret |
-| TEMPLATE_ID | 是 | 上面这套通用模板 ID |
-| USER_IDS | 是 | 用户 key 到 OpenID 的 JSON 对象 |
-| RECIPIENTS_JSON | 是 | 家人姓名、城市和角色的 JSON 对象 |
-| QWEATHER_API_KEY | 是 | 和风天气 API Key |
-| QWEATHER_API_HOST | 是 | 和风天气专属 Host |
-| GEMINI_API_KEY | 否 | Gemini API Key |
-| GEMINI_MODEL | 否 | Gemini 模型名，默认 `gemini-2.5-flash` |
+| Secret | 必需 | 内容 | 示例值（均为占位符） |
+|---|---|---|---|
+| APP_ID | 是 | 微信测试号 AppID | `wx1234567890abcdef` |
+| APP_SECRET | 是 | 微信测试号 AppSecret | `abcdef1234567890abcdef1234567890` |
+| TEMPLATE_ID | 是 | 上面这套通用模板 ID | `AbCdEfGhIjKlMnOpQrStUvWxYz0123456789` |
+| USER_IDS | 是 | 用户 key 到 OpenID 的 JSON 对象 | `{"parent_1":"oExampleParentOpenId"}` |
+| RECIPIENTS_JSON | 是 | 家人姓名、城市和角色的 JSON 对象 | `{"recipients":[{"key":"parent_1",...}]}` |
+| QWEATHER_API_KEY | 是 | 和风天气 API Key | `qweather-example-api-key` |
+| QWEATHER_API_HOST | 是 | 和风天气专属 Host，不要追加 `/v7` | `https://xxx.qweather.com` |
+| GEMINI_API_KEY | 否 | Gemini API Key | `AIzaSyExampleGeminiKey` |
+| GEMINI_MODEL | 否 | Gemini 模型名，默认 `gemini-2.5-flash` | `gemini-2.5-flash` |
 
 真实密钥、OpenID 和个人配置只放 Secrets，不写进代码。
 
 ## USER_IDS
 
-格式必须是 JSON 对象，key 要与 `RECIPIENTS_JSON` 中的 key 完全一致：
+格式必须是 JSON 对象，key 要与 `RECIPIENTS_JSON` 中的 `key` 完全一致。把下面内容作为 Secret 的完整值粘贴，不要包含代码围栏：
 
 ```json
-{"parent_1":"OPENID_1","parent_2":"OPENID_2","child_1":"OPENID_3","child_2":"OPENID_4","spouse":"OPENID_5","sibling":"OPENID_6"}
+{
+  "parent_1": "oExampleParentOpenId",
+  "child_1": "oExampleChildOpenId",
+  "spouse": "oExampleSpouseOpenId"
+}
 ```
 
-OpenID 不是微信号，也不是昵称。家人需要先关注当前测试号。
+`oExample...` 只是占位符，必须替换成真实 OpenID。OpenID 不是微信号，也不是昵称；家人需要先关注当前测试号。暂时不发送给某人时，可以删除对应成员，或保留 key 但把值留空（程序会跳过该成员）。
 
 ## RECIPIENTS_JSON
 
-格式：`{"recipients":[...]}`。每个成员必须包含：`key`、`name`、`city_id`、`city_name`、`role`。
+格式：`{"recipients":[...]}`。把下面内容作为 Secret 的完整值粘贴，不要包含代码围栏；每个成员必须包含：`key`、`name`、`city_id`、`city_name`、`role`。
+
+```json
+{
+  "recipients": [
+    {
+      "key": "parent_1",
+      "name": "爸爸",
+      "city_id": "101280604",
+      "city_name": "深圳南山区",
+      "role": "parent"
+    },
+    {
+      "key": "child_1",
+      "name": "小明",
+      "city_id": "101280101",
+      "city_name": "广州天河区",
+      "role": "child"
+    },
+    {
+      "key": "spouse",
+      "name": "爱人",
+      "city_id": "101280601",
+      "city_name": "深圳福田区",
+      "role": "spouse"
+    }
+  ]
+}
+```
+
+注意：`USER_IDS` 中的 `parent_1`、`child_1`、`spouse` 必须与这里的 `key` 一一对应；`role` 只能使用 `parent`、`child`、`spouse`、`sibling`。
 
 支持的角色：
 
@@ -91,6 +125,14 @@ OpenID 不是微信号，也不是昵称。家人需要先关注当前测试号�
 | sibling | 兄弟姐妹 | 通勤、下班降雨、洗车和运动 |
 
 深圳南山区示例城市 ID：`101280604`。其他家人只需更换 `city_id` 和 `city_name`。城市 ID 使用和风天气 LocationList 查询。
+
+## 填写检查
+
+1. Secret 名称必须与表格完全一致，名称和值分开填写。
+2. 除 `QWEATHER_API_HOST`、`GEMINI_MODEL` 外，示例值都必须替换为你自己的真实值；不要把示例占位符直接保存。
+3. `USER_IDS` 和 `RECIPIENTS_JSON` 必须是单个合法 JSON 值，使用英文双引号，最后一项后不要加逗号。
+4. JSON 可以换行，但不要加入注释、Markdown 代码围栏或前后多余文字。
+5. 保存后到 `Actions -> Daily Weather Push -> Run workflow` 手动运行一次，优先检查 JSON、OpenID 和模板 ID。
 
 ## AI 机制
 
