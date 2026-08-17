@@ -31,6 +31,11 @@ class WeatherReminderTests(unittest.TestCase):
             self.assertEqual(data["travel"]["value"], "详细天气出行建议")
             self.assertEqual(data["note"]["value"], "详细天气出行建议")
 
+    def test_empty_ai_note_gets_a_non_empty_template_value(self):
+        data = push._template_data(RECIPIENT, WEATHER, "morning", "   ")
+        self.assertTrue(data["note"]["value"].strip())
+        self.assertEqual(data["note"]["value"], data["travel"]["value"])
+
     def test_fallback_uses_weather_details(self):
         advice = love_message._fallback("sibling", WEATHER)
         self.assertIn("08:00 雷阵雨 70%", advice)

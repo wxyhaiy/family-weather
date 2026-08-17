@@ -40,10 +40,25 @@ def _child_note(weather: dict) -> str:
     return f"{rain}上下学走人行道，遇到湿滑路面慢慢走，记得喝水，玩耍时注意安全。"
 
 
+def _guaranteed_travel_note(weather: dict) -> str:
+    """Build a non-empty message for the template's note field."""
+    rain_hours = weather.get("rain_hours") or []
+    rain = "、".join(rain_hours[:3]) if rain_hours and rain_hours != ["未来12小时暂无明显降雨"] else "未来12小时暂无明显降雨"
+    return (
+        f"当前{weather.get('temp', '--')}℃，体感{weather.get('feels_like', '--')}℃，"
+        f"今日{weather.get('temp_min', '--')}-{weather.get('temp_max', '--')}℃，"
+        f"{weather.get('wind_dir', '--')}{weather.get('wind_scale', '--')}级；"
+        f"{rain}。外出前查看临近预报，建议携带雨具，通勤和驾车注意路面安全。"
+    )
+
+
 def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict:
     greeting = "早安" if mode == "morning" else "晚安"
     role = recipient["role"]
-    travel = note or _travel_note(weather) + "外出前查看天气，按天气变化做好防护，路上注意安全。"
+    travel = note.strip() if isinstance(note, str) else ""
+    if not travel:
+        travel = _guaranteed_travel_note(weather)
+        print("出行提醒为空，已使用发送前兜底")
     child = _child_note(weather)
     return {
         "first": {"value": f"{greeting}，{recipient['name']}，今日天气提醒"},
@@ -54,6 +69,7 @@ def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict
         "min_temperature": {"value": str(weather.get("temp_min", "--"))},
         "max_temperature": {"value": str(weather.get("temp_max", "--"))},
         "wind_direction": {"value": f"{weather.get('wind_dir', '--')}{weather.get('wind_scale', '--')}级"},
+        # The current WeChat template displays {{note.DATA}} as 出行提醒.
         "note": {"value": travel},
         # Keep both template fields populated so existing and newer templates show the same advice.
         "travel": {"value": travel},
@@ -74,7 +90,9 @@ def send_message(recipient: dict, weather: dict, mode: str, note: str = "") -> N
     if not open_id:
         print(f"跳过 {recipient['name']}：OpenID 为空")
         return
-    payload = {"touser": open_id, "template_id": TEMPLATE_ID, "url": _detail_url(recipient, weather, mode, note), "data": _template_data(recipient, weather, mode, note)}
+    template_data = _template_data(recipient, weather, mode, note)
+    payload = {"touser": open_id, "template_id": TEMPLATE_ID, "url": _detail_url(recipient, weather, mode, note), "data": template_data}
+    print(f"   模板出行提醒长度：{len(template_data['note']['value'])}")
     response = requests.post(SEND_URL, params={"access_token": _access_token()}, json=payload, timeout=15)
     response.raise_for_status()
     result = response.json()

@@ -74,6 +74,20 @@ def _usable_note(note: str) -> bool:
     return True
 
 
+def _note_rejection_reason(note: str) -> str:
+    if not note:
+        return "empty"
+    if len(note) < 12:
+        return f"too_short:{len(note)}"
+    if len(note) > 500:
+        return f"too_long:{len(note)}"
+    if re.search(r"[A-Za-z]{3,}", note):
+        return "contains_english"
+    if any(marker in note.lower() for marker in ("text talks", "function call", "tool call", "json", "markdown")):
+        return "contains_forbidden_marker"
+    return "ok"
+
+
 def _clean_note(note: str) -> str:
     note = re.sub(r"^[一二三四五六七八九十\s、.。:：-]*(?:父母|孩子|兄弟姐妹|兄弟|专属|角色)?(?:提醒|注意事项|出行提醒)\s*[:：-]?\s*", "", note)
     return note.strip().strip("#*")
@@ -96,7 +110,7 @@ def generate_note(recipient: dict, weather: dict, mode: str) -> str:
             )
         note = _clean_note((response.text or "").strip())
         if not _usable_note(note):
-            print("⚠️ Gemini 返回内容不可用，使用本地出行建议")
+            print(f"⚠️ Gemini 返回内容不可用，原因={_note_rejection_reason(note)}，长度={len(note)}，使用本地出行建议")
             note = _fallback(recipient["role"], weather)
         return note
     except Exception as exc:
