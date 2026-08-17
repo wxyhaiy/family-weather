@@ -1,7 +1,17 @@
 """QWeather data needed for role-specific AI weather briefings."""
+import time
+from functools import lru_cache
+
+import jwt
 import requests
 
-from config import QWEATHER_API_HOST, QWEATHER_API_KEY, QWEATHER_JWT
+from config import (
+    QWEATHER_API_HOST,
+    QWEATHER_API_KEY,
+    QWEATHER_KEY_ID,
+    QWEATHER_PRIVATE_KEY,
+    QWEATHER_PROJECT_ID,
+)
 
 EMOJI = {"晴": "☀️", "多云": "⛅", "阴": "☁️", "小雨": "🌧️", "中雨": "🌧️", "大雨": "🌧️", "暴雨": "🌊", "阵雨": "🌦️", "雷阵雨": "⛈️", "小雪": "❄️", "雾": "🌫️", "霾": "😷"}
 
@@ -18,14 +28,23 @@ def _get(path: str, city_id: str, extra_params: dict | None = None) -> dict:
     return result
 
 
+@lru_cache(maxsize=1)
+def _qweather_jwt() -> str:
+    """Sign a short-lived QWeather JWT from the project's private key."""
+    now = int(time.time())
+    payload = {"sub": QWEATHER_PROJECT_ID, "iat": now - 30, "exp": now + 23 * 60 * 60}
+    headers = {"alg": "EdDSA", "kid": QWEATHER_KEY_ID}
+    return jwt.encode(payload, QWEATHER_PRIVATE_KEY, algorithm="EdDSA", headers=headers)
+
+
 def _get_air_quality(recipient: dict) -> dict:
     latitude = recipient.get("latitude")
     longitude = recipient.get("longitude")
     if latitude in (None, "") or longitude in (None, ""):
         print(f"   空气质量跳过：{recipient.get('name', '收件人')} 未配置坐标")
         return {}
-    if not QWEATHER_JWT:
-        print("   空气质量跳过：未配置 QWEATHER_JWT")
+    if not all((QWEATHER_PROJECT_ID, QWEATHER_KEY_ID, QWEATHER_PRIVATE_KEY)):
+        print("   空气质量跳过：未配置 QWEATHER_PROJECT_ID、QWEATHER_KEY_ID 或 QWEATHER_PRIVATE_KEY")
         return {}
     try:
         latitude = float(latitude)
@@ -34,7 +53,7 @@ def _get_air_quality(recipient: dict) -> dict:
         print(f"   空气质量跳过：{recipient.get('name', '收件人')} 坐标不是数字")
         return {}
     url = f"{QWEATHER_API_HOST.rstrip('/')}/airquality/v1/current/{latitude}/{longitude}"
-    response = requests.get(url, headers={"Authorization": f"Bearer {QWEATHER_JWT}"}, timeout=15)
+    response = requests.get(url, headers={"Authorization": f"Bearer {_qweather_jwt()}"}, timeout=15)
     response.raise_for_status()
     return response.json()
 

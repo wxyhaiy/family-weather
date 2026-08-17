@@ -62,10 +62,15 @@ AI 专属提醒：{{note.DATA}}
 | RECIPIENTS_JSON | 是 | 家人姓名、城市和角色的 JSON 对象 | `{"recipients":[{"key":"parent_1",...}]}` |
 | QWEATHER_API_KEY | 是 | 和风天气 API Key | `qweather-example-api-key` |
 | QWEATHER_API_HOST | 是 | 和风天气专属 Host，不要追加 `/v7` | `https://xxx.qweather.com` |
+| QWEATHER_PROJECT_ID | 否* | 和风天气项目 ID，用于签发空气质量 API 的 JWT | `qweather-example-project` |
+| QWEATHER_KEY_ID | 否* | 和风天气 JWT Key ID | `qweather-example-key-id` |
+| QWEATHER_PRIVATE_KEY | 否* | 和风天气 JWT 私钥，完整 PEM 内容 | `-----BEGIN PRIVATE KEY-----...` |
 | GEMINI_API_KEY | 否 | Gemini API Key | `AIzaSyExampleGeminiKey` |
 | GEMINI_MODEL | 否 | Gemini 模型名，默认 `gemini-2.5-flash` | `gemini-2.5-flash` |
 
 真实密钥、OpenID 和个人配置只放 Secrets，不写进代码。
+
+* 只有需要空气质量数据时才需要配置这三个 JWT 凭据。`QWEATHER_JWT` 不需要配置，也不能从控制台直接复制；程序会使用 Project ID、Key ID 和私钥动态生成短期 Bearer Token。
 
 ## USER_IDS
 

@@ -67,6 +67,8 @@ jobs:
           # 和风天气
           QWEATHER_API_KEY: ${{ secrets.QWEATHER_API_KEY }}
           QWEATHER_API_HOST: ${{ secrets.QWEATHER_API_HOST }}
-          QWEATHER_JWT: ${{ secrets.QWEATHER_JWT }}
+          QWEATHER_PROJECT_ID: ${{ secrets.QWEATHER_PROJECT_ID }}
+          QWEATHER_KEY_ID: ${{ secrets.QWEATHER_KEY_ID }}
+          QWEATHER_PRIVATE_KEY: ${{ secrets.QWEATHER_PRIVATE_KEY }}
         run: |
           python main.py --mode ${{ steps.mode.outputs.push_mode }}
