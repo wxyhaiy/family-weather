@@ -93,7 +93,7 @@ python main.py --schedule
 
 | 时间 / Time | 模式 / Mode | Cron (UTC) |
 |---|---|---|
-| 每天 07:30 (北京) | 🌞 早安 morning | `30 23 * * *` |
+| 每天 06:30 (北京) | 🌞 早安 morning | `30 22 * * *` |
 | 每天 22:00 (北京) | 🌙 晚安 evening | `0 14 * * *` |
 
 配置步骤：

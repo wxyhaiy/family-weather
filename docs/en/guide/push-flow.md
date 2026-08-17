@@ -37,13 +37,13 @@ After pushing code to GitHub, it runs automatically:
 
 | Cron (UTC) | Beijing Time | Mode |
 |---|---|---|
-| `30 23 * * *` | 07:30 daily | 🌞 Morning |
+| `30 22 * * *` | 06:30 daily | 🌞 Morning |
 | `0 14 * * *` | 22:00 daily | 🌙 Evening |
 
 ### Full Run Process
 
 ```
-[UTC 23:30] GitHub scheduler triggers cron
+[UTC 22:30] GitHub scheduler triggers cron
   ↓
 Allocate fresh Ubuntu VM (~10s)
   ↓
@@ -61,7 +61,7 @@ Destroy VM — fresh every time, stateless
 ```
 
 ::: warning ⏱️ About Delay
-GitHub Actions cron has a **5–15 minute delay**. This is a known GitHub limitation. Actual push time may be 07:30–07:45.
+GitHub Actions cron has a **5–15 minute delay**. This is a known GitHub limitation. Actual push time may be 06:30–06:45.
 :::
 
 ---

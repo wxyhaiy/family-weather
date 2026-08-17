@@ -2,8 +2,8 @@ name: Daily Weather Push
 
 on:
   schedule:
-    # GitHub Actions uses UTC. 23:30 UTC = 07:30 Beijing; 14:00 UTC = 22:00 Beijing.
-    - cron: '30 23 * * *'
+    # GitHub Actions uses UTC. 22:30 UTC = 06:30 Beijing; 14:00 UTC = 22:00 Beijing.
+    - cron: '30 22 * * *'
     - cron: '0 14 * * *'
 
 
@@ -43,10 +43,10 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "push_mode=${{ github.event.inputs.push_mode }}" >> $GITHUB_OUTPUT
           else
-            # The morning job runs at 23:30 UTC; the evening job runs at 14:00 UTC.
+            # The morning job runs at 22:30 UTC; the evening job runs at 14:00 UTC.
             HOUR=$(date -u +%H)
             MINUTE=$(date -u +%M)
-            if [ "$HOUR" = "23" ] && [ "$MINUTE" = "30" ]; then
+            if [ "$HOUR" = "22" ] && [ "$MINUTE" = "30" ]; then
               echo "push_mode=morning" >> $GITHUB_OUTPUT
             else
               echo "push_mode=evening" >> $GITHUB_OUTPUT

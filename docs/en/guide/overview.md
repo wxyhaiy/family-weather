@@ -14,7 +14,7 @@
 | 🤖 AI-Generated | Gemini generates Chinese commentary + English love messages based on real-time weather |
 | 📱 WeChat Push | PushPlus one-to-many push with group support |
 | 🏙️ Multi-City | Configure any number of cities, each mapped to a person |
-| ⏰ Dual Push | Morning 07:30 + Evening 22:00, auto mode detection |
+| ⏰ Dual Push | Morning 06:30 + Evening 22:00, auto mode detection |
 | ☁️ Serverless | GitHub Actions scheduled run — completely free |
 
 ## Data Flow

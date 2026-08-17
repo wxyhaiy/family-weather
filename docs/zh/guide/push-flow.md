@@ -62,13 +62,13 @@ GitHub 服务器
 
 | Cron (UTC) | 北京时间 | 模式 |
 |---|---|---|
-| `30 23 * * *` | 每天 07:30 | 🌞 早安 morning |
+| `30 22 * * *` | 每天 06:30 | 🌞 早安 morning |
 | `0 14 * * *` | 每天 22:00 | 🌙 晚安 evening |
 
 ### 完整运行过程
 
 ```
-[UTC 23:30] GitHub 调度系统检查 cron 
+[UTC 22:30] GitHub 调度系统检查 cron 
   ↓
 分配全新 Ubuntu 虚拟机 (~10s)
   ↓
@@ -86,7 +86,7 @@ Step 5: 注入 Secrets 为环境变量 + 执行 python main.py (~30s)
 ```
 
 ::: warning ⏱️ 关于延迟
-GitHub Actions 的 cron 触发有 **5~15 分钟的延迟**，这是 GitHub 的已知限制。实际推送时间可能在 07:30~07:45 之间。
+GitHub Actions 的 cron 触发有 **5~15 分钟的延迟**，这是 GitHub 的已知限制。实际推送时间可能在 06:30~06:45 之间。
 :::
 
 ### 运行日志
