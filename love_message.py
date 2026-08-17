@@ -28,7 +28,12 @@ def generate_note(recipient: dict, weather: dict, mode: str) -> str:
 请生成一段 80-180 字的中文专属天气通报，直接写给{recipient['name']}。必须具体、自然、有行动建议。缺失或为 -- 的数据不要提及。不要使用 Markdown、标题、JSON 或解释。"""
     try:
         from google import genai
-        response = genai.Client(api_key=GEMINI_API_KEY).models.generate_content(model=GEMINI_MODEL, contents=prompt, config={"temperature": 0.75, "max_output_tokens": 300})
+        with genai.Client(api_key=GEMINI_API_KEY) as client:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config={"temperature": 0.75, "max_output_tokens": 300},
+            )
         return response.text.strip()
     except Exception as exc:
         print(f"⚠️ Gemini 失败，使用本地角色提醒: {exc}")
