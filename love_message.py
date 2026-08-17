@@ -1,4 +1,6 @@
 """Role-aware Gemini weather briefing with a safe local fallback."""
+import re
+
 from config import GEMINI_API_KEY, GEMINI_MODEL
 
 ROLE_PROMPTS = {
@@ -15,10 +17,22 @@ def _fallback(role: str, weather: dict) -> str:
     if role == "parent":
         return f"体感 {weather.get('feels_like', '--')}℃，早晚注意增减衣物；空气质量{weather.get('air_category', '未知')}，外出注意防护。"
     if role == "sibling":
-        return f"今天{weather['text']}，未来一段时间：{'、'.join(weather.get('rain_hours', [])[:2])}，出门记得看天气。"
+        rain = "、".join(weather.get("rain_hours", [])[:2])
+        return f"出行提醒：今天{weather['text']}，{rain or '暂时没有明显降雨'}；通勤或外出建议带伞，路上注意安全。"
     if role == "spouse":
         return f"今天最高 {weather.get('temp_max', '--')}℃，出门记得做好防晒，带上伞，愿你漂亮又舒心。"
-    return f"今天是{weather['text']}，出门记得带水，走路看路，开心玩耍也要注意安全。"
+    return f"孩子提醒：今天{weather['text']}，出门带好水和雨具；上下学路上走人行道，遇到湿滑路面慢慢走，玩耍时注意安全。"
+
+
+def _usable_note(note: str) -> bool:
+    """Reject tool traces, English fragments, and malformed short model output."""
+    if not note or len(note) < 12 or len(note) > 500:
+        return False
+    if re.search(r"[A-Za-z]{3,}", note):
+        return False
+    if any(marker in note.lower() for marker in ("text talks", "function call", "tool call", "json", "markdown")):
+        return False
+    return True
 
 
 def generate_note(recipient: dict, weather: dict, mode: str) -> str:
@@ -36,7 +50,10 @@ def generate_note(recipient: dict, weather: dict, mode: str) -> str:
                 contents=prompt,
                 config={"temperature": 0.75, "max_output_tokens": 300},
             )
-        note = (response.text or "").strip() or _fallback(recipient["role"], weather)
+        note = (response.text or "").strip()
+        if not _usable_note(note):
+            print("⚠️ Gemini 返回内容不可用，使用本地角色提醒")
+            note = _fallback(recipient["role"], weather)
         return f"{ROLE_LABELS.get(recipient['role'], '天气提醒')}：{note}"
     except Exception as exc:
         print(f"⚠️ Gemini 失败，使用本地角色提醒: {exc}")

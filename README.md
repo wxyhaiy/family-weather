@@ -31,6 +31,8 @@ min_temperature
 max_temperature
 wind_direction
 note
+travel
+child
 remark
 ```
 
@@ -46,6 +48,8 @@ remark
 最高温：{{max_temperature.DATA}}℃
 风向风力：{{wind_direction.DATA}}
 AI 专属提醒：{{note.DATA}}
+出行提醒：{{travel.DATA}}
+孩子提醒：{{child.DATA}}
 {{remark.DATA}}
 ```
 
@@ -141,7 +145,7 @@ AI 专属提醒：{{note.DATA}}
 
 ## AI 机制
 
-AI 只生成 `note`，不会改写结构化天气字段。模型会收到姓名、角色、地点、温度、体感、湿度、风向、AQI、空气质量、紫外线和未来降雨信息，并按角色生成 80 到 180 字的中文通报。缺失数据不得编造。
+AI 只生成 `note`，不会改写结构化天气字段。模型会收到姓名、角色、地点、温度、体感、湿度、风向、AQI、空气质量、紫外线和未来降雨信息，并按角色生成中文通报。程序会过滤英文残片、工具调用文本和异常短内容；模型输出不可用时自动使用本地中文提醒。
 
 ## 定时任务
 

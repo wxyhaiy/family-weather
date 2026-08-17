@@ -22,11 +22,29 @@ def _access_token() -> str:
 
 
 def _default_note(role: str) -> str:
-    return {"parent": "早晚注意增减衣物，外出注意防滑和安全。", "child": "出门记得带好水和雨具，注意交通安全。", "spouse": "今天也要照顾好自己，外出记得做好防护。", "sibling": "出门注意天气变化，愿你今天顺利平安。"}.get(role, "请根据天气变化增减衣物，外出做好防护。")
+    return {
+        "parent": "早晚注意增减衣物，外出注意防滑和安全。",
+        "child": "孩子提醒：出门带好水和雨具，上下学走人行道，遇到湿滑路面慢慢走。",
+        "spouse": "今天也要照顾好自己，外出记得做好防护。",
+        "sibling": "出行提醒：外出前查看降雨，建议带伞，通勤路上注意安全。",
+    }.get(role, "请根据天气变化增减衣物，外出做好防护。")
+
+
+def _travel_note(weather: dict) -> str:
+    rain = "、".join(weather.get("rain_hours", [])[:2])
+    return f"{rain}；" if rain else "暂时没有明显降雨；"
+
+
+def _child_note(weather: dict) -> str:
+    rain = "有降雨时带好雨具，" if weather.get("rain_hours") and weather["rain_hours"] != ["未来12小时暂无明显降雨"] else ""
+    return f"{rain}上下学走人行道，遇到湿滑路面慢慢走，记得喝水，玩耍时注意安全。"
 
 
 def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict:
     greeting = "早安" if mode == "morning" else "晚安"
+    role = recipient["role"]
+    travel = _travel_note(weather) + "外出前查看天气，建议带伞，通勤路上注意安全。"
+    child = _child_note(weather)
     return {
         "first": {"value": f"{greeting}，{recipient['name']}，今日天气提醒"},
         "date": {"value": datetime.now().strftime("%Y年%m月%d日")},
@@ -37,6 +55,9 @@ def _template_data(recipient: dict, weather: dict, mode: str, note: str) -> dict
         "max_temperature": {"value": str(weather.get("temp_max", "--"))},
         "wind_direction": {"value": f"{weather.get('wind_dir', '--')}{weather.get('wind_scale', '--')}级"},
         "note": {"value": note or _default_note(recipient["role"])},
+        # These keys match the separate travel/child fields in the WeChat template.
+        "travel": {"value": travel if role == "sibling" else ""},
+        "child": {"value": child if role == "child" else ""},
         "remark": {"value": note or "愿家人今天平安顺利。"},
     }
 
