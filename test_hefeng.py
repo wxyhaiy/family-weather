@@ -1,11 +1,15 @@
+import os
 import requests
 
 def test_qweather_custom_host():
     print("\n=== 测试和风天气 (专属 API Host) ===")
-    key = "6c9427bb021045838d59fa6e8b605fc7"  # 记得换成你新生成的 Key
+    key = os.getenv("QWEATHER_API_KEY")
+    host = os.getenv("QWEATHER_API_HOST")
+    if not key or not host:
+        raise RuntimeError("请先设置 QWEATHER_API_KEY 和 QWEATHER_API_HOST 环境变量")
     
     # 重点在这里：把 devapi.qweather.com 换成你的专属 apihost
-    url = "https://pc5ctvmrbk.re.qweatherapi.com/v7/weather/now" 
+    url = f"{host.rstrip('/')}/v7/weather/now"
     
     headers = {"X-QW-Api-Key": key}
     params = {"location": "101010100"} # 101010100 是北京的城市代码，你可以换成目标城市

@@ -4,7 +4,7 @@ push.py - PushPlus 群组推送（丰富天气 + Gemini 点评 + 情话）
 import requests
 from config import PUSHPLUS_TOKEN, PUSHPLUS_TOPIC
 
-PUSHPLUS_URL = "http://www.pushplus.plus/send"
+PUSHPLUS_URL = "https://www.pushplus.plus/send"
 
 
 def send_message(title: str, content: str) -> bool:
